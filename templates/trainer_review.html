@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}E-Mail-Workouts prüfen{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">E-Mail-Workouts prüfen</h1>
+    <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-ghost btn-sm">&larr; Dashboard</a>
+</div>
+
+{% if workouts %}
+    {% for w in workouts %}
+    <div class="card" style="margin-bottom:1rem;padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+            <div>
+                <div style="font-weight:600;">{{ w.trainee_name }}</div>
+                <div class="text-sm text-muted">{{ w.trainee_email }} &middot; {{ w.created_at[:16] }}</div>
+            </div>
+            <span class="badge" style="background:var(--color-warning-light);color:var(--color-warning);">
+                {{ w.parse_confidence }} confidence
+            </span>
+        </div>
+
+        {% if w.sets %}
+        <table class="set-table" style="width:100%;margin-bottom:0.75rem;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Übung</th>
+                    <th>Set</th>
+                    <th>Gewicht</th>
+                    <th>Wdh</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in w.sets %}
+                <tr>
+                    <td style="text-align:left;">{{ s.exercise_name if s.exercise_name else s.exercise_id }}</td>
+                    <td style="text-align:center;">{{ s.set_number }}</td>
+                    <td style="text-align:center;">{{ s.weight if s.weight else '-' }} kg</td>
+                    <td style="text-align:center;">{{ s.reps if s.reps else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-sm text-muted">Keine Sets geparst.</p>
+        {% endif %}
+
+        <div class="flex gap-1">
+            <form method="POST" action="{{ url_for('trainer.review_workout', workout_id=w.id) }}">
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success btn-sm">&#10003; Bestätigen</button>
+            </form>
+            <form method="POST" action="{{ url_for('trainer.review_workout', workout_id=w.id) }}"
+                  onsubmit="return confirm('Workout wirklich verwerfen?')">
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-danger);">&#10005; Verwerfen</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#9993;</div>
+        <p class="empty-state-text">Keine Workouts zur Prüfung.</p>
+    </div>
+{% endif %}
+{% endblock %}

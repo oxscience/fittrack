@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Übungskatalog - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Übungskatalog</h1>
+</div>
+
+<!-- Filters -->
+<div class="card mb-2">
+    <form method="GET" class="flex gap-1 flex-wrap items-center">
+        <input type="search" name="search" value="{{ search_query }}" placeholder="Suchen..." style="max-width:200px;">
+        <select name="muscle_group" onchange="this.form.submit()">
+            <option value="">Alle Muskelgruppen</option>
+            {% for mg in muscle_groups %}
+            <option value="{{ mg }}" {{ 'selected' if mg == selected_muscle_group }}>{{ muscle_group_labels[mg] }}</option>
+            {% endfor %}
+        </select>
+        <select name="equipment" onchange="this.form.submit()">
+            <option value="">Alle Geräte</option>
+            {% for eq in equipment_list %}
+            <option value="{{ eq }}" {{ 'selected' if eq == selected_equipment }}>{{ equipment_labels[eq] }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm">Filtern</button>
+    </form>
+</div>
+
+<!-- Exercise List -->
+<div>
+    {% set current_group = namespace(value='') %}
+    {% for ex in exercises %}
+        {% if ex.muscle_group != current_group.value %}
+            {% set current_group.value = ex.muscle_group %}
+            <h3 class="mt-2 mb-1 text-sm" style="font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted);">
+                {{ muscle_group_labels.get(ex.muscle_group, ex.muscle_group) }}
+            </h3>
+        {% endif %}
+        <div class="card" style="padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span style="font-weight:500;">{{ ex.name }}</span>
+                {% if ex.created_by %}<span class="badge badge-equipment">Eigene</span>{% endif %}
+            </div>
+            <span class="badge badge-equipment">{{ equipment_labels.get(ex.equipment, ex.equipment) }}</span>
+        </div>
+    {% endfor %}
+    {% if not exercises %}
+        <div class="empty-state">
+            <p class="empty-state-text">Keine Übungen gefunden.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Create Custom Exercise -->
+<div class="card mt-3">
+    <h3 class="card-title mb-1">Eigene Übung erstellen</h3>
+    <form method="POST" action="{{ url_for('exercise.create') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required placeholder="z.B. Kettlebell Swing">
+            </div>
+            <div class="form-group">
+                <label for="muscle_group">Muskelgruppe</label>
+                <select id="muscle_group" name="muscle_group" required>
+                    {% for mg in muscle_groups %}
+                    <option value="{{ mg }}">{{ muscle_group_labels[mg] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="equipment">Gerät</label>
+                <select id="equipment" name="equipment">
+                    {% for eq in equipment_list %}
+                    <option value="{{ eq }}">{{ equipment_labels[eq] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Erstellen</button>
+    </form>
+</div>
+{% endblock %}

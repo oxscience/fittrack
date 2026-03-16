@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_branding.app_name if app_branding else 'FitTrack' }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+</head>
+<body>
+    {% if current_user %}
+    <header class="top-bar">
+        {% set display_name = app_branding.sender_name or app_branding.app_name if app_branding else 'FitTrack' %}
+        {% set display_icon = app_branding.app_icon if app_branding and app_branding.app_icon else '' %}
+        <a href="{{ url_for('workout.dashboard') }}" class="logo">
+            <span class="logo-icon" id="logo-icon" {% if current_user.role == 'trainer' %}onclick="openIconPicker(event)" title="Icon ändern"{% endif %}>{% if display_icon %}{{ display_icon }}{% else %}&#9878;{% endif %}</span> {{ display_name }}
+        </a>
+        {% if current_user.role == 'trainer' %}
+        <div class="icon-picker-popup" id="icon-picker" style="display:none;">
+            <div class="icon-picker-grid" id="icon-picker-grid"></div>
+        </div>
+        {% endif %}
+        <nav>
+            {% if current_user.role == 'trainee' %}
+                <a href="{{ url_for('workout.dashboard') }}" class="{{ 'active' if request.endpoint == 'workout.dashboard' }}">Dashboard</a>
+                <a href="{{ url_for('workout.history') }}" class="{{ 'active' if request.endpoint == 'workout.history' }}">Historie</a>
+                <a href="{{ url_for('exercise.index') }}" class="{{ 'active' if request.endpoint == 'exercise.index' }}">Katalog</a>
+                <a href="{{ url_for('routine.index') }}" class="{{ 'active' if request.endpoint == 'routine.index' }}">Trainings</a>
+            {% else %}
+                <a href="{{ url_for('trainer.dashboard') }}" class="{{ 'active' if request.endpoint == 'trainer.dashboard' }}">Dashboard</a>
+                <a href="{{ url_for('exercise.index') }}" class="{{ 'active' if request.endpoint == 'exercise.index' }}">Katalog</a>
+                <a href="{{ url_for('routine.index') }}" class="{{ 'active' if request.endpoint == 'routine.index' }}">Trainings</a>
+                <a href="{{ url_for('setup.email_settings') }}" class="{{ 'active' if request.endpoint == 'setup.email_settings' }}">E-Mail</a>
+            {% endif %}
+        </nav>
+        <div class="actions">
+            <span class="text-sm text-muted">{{ current_user.name }}</span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Dark/Light Mode">&#9790;</button>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal" id="modal-content"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

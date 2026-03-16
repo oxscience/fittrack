@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Workout - FitTrack{% endblock %}
+{% block content %}
+<div class="workout-header">
+    <div>
+        <h1 class="section-title">Workout</h1>
+        <span class="text-sm text-muted">{{ workout.started_at[:16] | replace('T', ' ') }}</span>
+    </div>
+    <div class="workout-timer" id="workout-timer" data-started="{{ workout.started_at | replace(' ', 'T') }}Z">0:00</div>
+</div>
+
+<!-- Exercise Blocks (with superset grouping) -->
+<div id="exercise-list">
+    {% set ns = namespace(current_group=None, group_open=False) %}
+    {% for eid, ex in exercises.items() %}
+        {% set sg = superset_map.get(eid|string) %}
+
+        {# Close previous superset wrapper if group changed #}
+        {% if ns.group_open and (not sg or sg != ns.current_group) %}
+            </div>
+            {% set ns.group_open = False %}
+        {% endif %}
+
+        {# Open new superset wrapper #}
+        {% if sg and sg != ns.current_group %}
+            <div class="superset-wrapper">
+            <div class="superset-label">Supersatz</div>
+            {% set ns.group_open = True %}
+        {% endif %}
+
+        {% set ns.current_group = sg %}
+        {% include "partials/exercise_block.html" %}
+    {% endfor %}
+
+    {# Close last superset wrapper if still open #}
+    {% if ns.group_open %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Exercise Button -->
+<button class="btn btn-block mt-2" onclick="openExercisePicker()">
+    + Übung hinzufügen
+</button>
+
+<!-- Finish Workout -->
+<div class="card mt-3">
+    <form method="POST" action="{{ url_for('workout.finish', workout_id=workout.id) }}">
+        <div class="form-group">
+            <label for="notes">Notizen (optional)</label>
+            <textarea id="notes" name="notes" placeholder="Wie lief das Workout?"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success btn-lg" style="flex:1;">Workout beenden</button>
+            <button type="button" class="btn btn-danger btn-sm"
+                    onclick="if(confirm('Workout wirklich verwerfen?')) document.getElementById('discard-form').submit()">
+                Verwerfen
+            </button>
+        </div>
+    </form>
+    <form id="discard-form" method="POST" action="{{ url_for('workout.discard', workout_id=workout.id) }}" class="hidden"></form>
+</div>
+
+<script>
+    window.WORKOUT_ID = {{ workout.id }};
+</script>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Setup - FitTrack{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card" style="max-width:520px;">
+
+        <!-- Progress Steps -->
+        <div class="setup-steps">
+            {% for i in range(1, 5) %}
+            <div class="setup-step {{ 'active' if i == step else ('done' if i < step else '') }}">
+                <span class="step-dot">{% if i < step %}&#10003;{% else %}{{ i }}{% endif %}</span>
+                <span class="step-label">
+                    {% if i == 1 %}Account{% elif i == 2 %}E-Mail{% elif i == 3 %}Branding{% else %}Fertig{% endif %}
+                </span>
+            </div>
+            {% if i < 4 %}<div class="step-line {{ 'done' if i < step else '' }}"></div>{% endif %}
+            {% endfor %}
+        </div>
+
+        {% if step == 1 %}
+        <!-- Step 1: Admin Account -->
+        <h1 class="auth-title" style="margin-top:1.5rem;">Trainer-Account anlegen</h1>
+        <p class="auth-subtitle">Erstelle deinen Admin-Account.</p>
+        <form method="POST" action="{{ url_for('setup.step1') }}">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required autofocus placeholder="Dein Name">
+            </div>
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" required placeholder="name@beispiel.de">
+            </div>
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" name="password" required placeholder="Min. 6 Zeichen" minlength="6">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Weiter &rarr;</button>
+            </div>
+        </form>
+
+        {% elif step == 2 %}
+        <!-- Step 2: Email Configuration -->
+        <h1 class="auth-title" style="margin-top:1.5rem;">E-Mail konfigurieren</h1>
+        <p class="auth-subtitle">Für den Versand und Empfang von Trainingsplänen.</p>
+        <form method="POST" action="{{ url_for('setup.step2') }}" id="email-form">
+            <div class="form-group">
+                <label for="provider">Provider</label>
+                <select id="provider" onchange="fillProvider(this.value)">
+                    <option value="">Bitte wählen...</option>
+                    <option value="gmail">Gmail</option>
+                    <option value="outlook">Outlook / Microsoft 365</option>
+                    <option value="custom">Eigener Server</option>
+                </select>
+            </div>
+
+            <div id="email-fields" style="display:none;">
+                <fieldset style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem;">
+                    <legend style="font-weight:600;font-size:0.875rem;padding:0 0.5rem;">SMTP (Versand)</legend>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2">
+                            <label for="smtp_host">Host</label>
+                            <input type="text" id="smtp_host" name="smtp_host" placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="smtp_port">Port</label>
+                            <input type="number" id="smtp_port" name="smtp_port" placeholder="587">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_encryption">Verschlüsselung</label>
+                        <select id="smtp_encryption" name="smtp_encryption">
+                            <option value="starttls">STARTTLS</option>
+                            <option value="ssl">SSL/TLS</option>
+                            <option value="none">Keine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_user">Benutzername</label>
+                        <input type="text" id="smtp_user" name="smtp_user" placeholder="deine@email.de">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_password">Passwort / App-Passwort</label>
+                        <input type="password" id="smtp_password" name="smtp_password" placeholder="App-Passwort eingeben">
+                    </div>
+                </fieldset>
+
+                <fieldset style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem;">
+                    <legend style="font-weight:600;font-size:0.875rem;padding:0 0.5rem;">IMAP (Empfang)</legend>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2">
+                            <label for="imap_host">Host</label>
+                            <input type="text" id="imap_host" name="imap_host" placeholder="imap.gmail.com">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label for="imap_port">Port</label>
+                            <input type="number" id="imap_port" name="imap_port" placeholder="993">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="imap_encryption">Verschlüsselung</label>
+                        <select id="imap_encryption" name="imap_encryption">
+                            <option value="ssl">SSL/TLS</option>
+                            <option value="starttls">STARTTLS</option>
+                            <option value="none">Keine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="imap_user">Benutzername</label>
+                        <input type="text" id="imap_user" name="imap_user" placeholder="deine@email.de">
+                    </div>
+                    <div class="form-group">
+                        <label for="imap_password">Passwort / App-Passwort</label>
+                        <input type="password" id="imap_password" name="imap_password" placeholder="App-Passwort eingeben">
+                    </div>
+                </fieldset>
+
+                <div class="form-group">
+                    <label for="email_from_name">Absendername</label>
+                    <input type="text" id="email_from_name" name="email_from_name" placeholder="FitTrack">
+                </div>
+                <div class="form-group">
+                    <label for="email_from_address">Absender-Adresse</label>
+                    <input type="email" id="email_from_address" name="email_from_address" placeholder="noreply@beispiel.de">
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <button type="button" class="btn btn-ghost btn-block"
+                        hx-post="{{ url_for('setup.test_email') }}"
+                        hx-include="#email-form"
+                        hx-target="#test-result"
+                        hx-indicator="#test-spinner">
+                        &#9889; Verbindung testen
+                    </button>
+                    <span id="test-spinner" class="htmx-indicator text-sm text-muted">Teste...</span>
+                    <div id="test-result" style="margin-top:0.5rem;"></div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="display:flex;gap:0.5rem;">
+                <a href="{{ url_for('setup.index', step=1) }}" class="btn btn-ghost" style="flex:1;text-align:center;">&larr; Zurück</a>
+                <button type="submit" class="btn btn-primary btn-lg" style="flex:2;">Weiter &rarr;</button>
+            </div>
+        </form>
+
+        {% elif step == 3 %}
+        <!-- Step 3: Branding -->
+        <h1 class="auth-title" style="margin-top:1.5rem;">App anpassen</h1>
+        <p class="auth-subtitle">Gib deiner App einen eigenen Namen.</p>
+        <form method="POST" action="{{ url_for('setup.step3') }}">
+            <div class="form-group">
+                <label for="app_name">App-Name</label>
+                <input type="text" id="app_name" name="app_name" placeholder="FitTrack" value="FitTrack">
+            </div>
+            <div class="form-group">
+                <label for="app_tagline">Untertitel (optional)</label>
+                <input type="text" id="app_tagline" name="app_tagline" placeholder="Workout-Tracking, einfach gemacht.">
+            </div>
+            <div class="form-actions" style="display:flex;gap:0.5rem;">
+                <a href="{{ url_for('setup.index', step=2) }}" class="btn btn-ghost" style="flex:1;text-align:center;">&larr; Zurück</a>
+                <button type="submit" class="btn btn-primary btn-lg" style="flex:2;">Weiter &rarr;</button>
+            </div>
+        </form>
+
+        {% elif step == 4 %}
+        <!-- Step 4: Summary -->
+        <h1 class="auth-title" style="margin-top:1.5rem;">Zusammenfassung</h1>
+        <p class="auth-subtitle">Alles bereit? Dann los!</p>
+
+        <div style="margin-bottom:1.5rem;">
+            <div class="card" style="margin-bottom:0.75rem;padding:1rem;">
+                <div class="text-sm text-muted">Account</div>
+                <div style="font-weight:600;">{{ summary.user.name if summary and summary.user else 'Nicht gesetzt' }}</div>
+                <div class="text-sm">{{ summary.user.email if summary and summary.user else '' }}</div>
+            </div>
+            <div class="card" style="margin-bottom:0.75rem;padding:1rem;">
+                <div class="text-sm text-muted">E-Mail</div>
+                {% if summary and summary.email_config %}
+                    <div style="font-weight:600;">{{ summary.email_config.get('smtp_host', 'Nicht konfiguriert') }}</div>
+                    <div class="text-sm">SMTP + IMAP konfiguriert</div>
+                {% else %}
+                    <div style="font-weight:600;">Nicht konfiguriert</div>
+                    <div class="text-sm text-muted">Kann später eingerichtet werden</div>
+                {% endif %}
+            </div>
+            <div class="card" style="padding:1rem;">
+                <div class="text-sm text-muted">App-Name</div>
+                <div style="font-weight:600;">{{ summary.branding.app_name if summary else 'FitTrack' }}</div>
+                <div class="text-sm">{{ summary.branding.app_tagline if summary else '' }}</div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('setup.complete') }}">
+            <div class="form-actions" style="display:flex;gap:0.5rem;">
+                <a href="{{ url_for('setup.index', step=3) }}" class="btn btn-ghost" style="flex:1;text-align:center;">&larr; Zurück</a>
+                <button type="submit" class="btn btn-primary btn-lg" style="flex:2;">Setup abschließen &#10003;</button>
+            </div>
+        </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PROVIDERS = {
+    gmail: {
+        smtp_host: 'smtp.gmail.com', smtp_port: '587', smtp_encryption: 'starttls',
+        imap_host: 'imap.gmail.com', imap_port: '993', imap_encryption: 'ssl'
+    },
+    outlook: {
+        smtp_host: 'smtp.office365.com', smtp_port: '587', smtp_encryption: 'starttls',
+        imap_host: 'outlook.office365.com', imap_port: '993', imap_encryption: 'ssl'
+    }
+};
+
+function fillProvider(provider) {
+    const fields = document.getElementById('email-fields');
+    if (!provider) { fields.style.display = 'none'; return; }
+    fields.style.display = 'block';
+    const p = PROVIDERS[provider];
+    if (p) {
+        for (const [key, val] of Object.entries(p)) {
+            const el = document.getElementById(key);
+            if (el) el.value = val;
+        }
+    } else {
+        // Custom - clear fields
+        ['smtp_host','smtp_port','smtp_encryption','imap_host','imap_port','imap_encryption'].forEach(k => {
+            const el = document.getElementById(k);
+            if (el) el.value = '';
+        });
+    }
+}
+</script>
+{% endblock %}

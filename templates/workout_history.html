@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{% if trainee_name %}{{ trainee_name }} - {% endif %}Historie - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">
+        {% if trainee_name %}{{ trainee_name }} &mdash; {% endif %}Workout-Historie
+    </h1>
+    {% if trainee_name %}
+    <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-ghost btn-sm">&larr; Zurück</a>
+    {% endif %}
+</div>
+
+{% if workouts %}
+    {% for w in workouts %}
+    <a href="{{ url_for('workout.detail', workout_id=w.id) }}" class="workout-card">
+        <div class="workout-card-left">
+            <div class="workout-card-date">{{ w.started_at[:10] }}</div>
+            <div class="workout-card-meta">
+                {{ w.exercise_count }} Übung{{ 'en' if w.exercise_count != 1 }}
+                {% if w.duration_seconds %}
+                    &middot; {{ (w.duration_seconds / 60) | int }} Min
+                {% endif %}
+            </div>
+        </div>
+        <div class="workout-card-right">
+            <div class="workout-card-volume">{{ "%.0f" | format(w.total_volume or 0) }} kg</div>
+            <div class="workout-card-volume-label">Volumen</div>
+        </div>
+    </a>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128203;</div>
+        <p class="empty-state-text">Noch keine abgeschlossenen Workouts.</p>
+    </div>
+{% endif %}
+{% endblock %}

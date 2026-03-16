@@ -1,0 +1,5 @@
+{% for protocol, success, message in results %}
+<div class="alert {{ 'alert-success' if success else 'alert-danger' }}" style="margin-bottom:0.5rem;">
+    <strong>{{ protocol }}:</strong> {{ message }}
+</div>
+{% endfor %}

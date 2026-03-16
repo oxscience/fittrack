@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Training bearbeiten' if routine else 'Neues Training' }} - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">{{ 'Training bearbeiten' if routine else 'Neues Training' }}</h1>
+    <a href="{{ url_for('routine.index') }}" class="btn btn-ghost btn-sm">&larr; Zurück</a>
+</div>
+
+<form method="POST"
+      action="{{ url_for('routine.update', routine_id=routine.id) if routine else url_for('routine.create') }}"
+      id="routine-form">
+    <div class="card">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ routine.name if routine else '' }}" required placeholder="z.B. Push Day">
+        </div>
+    </div>
+
+    <!-- Exercises -->
+    <h3 class="mt-2 mb-1" style="font-weight:600;">Übungen</h3>
+    <div id="routine-exercises">
+        {% if routine %}
+        {% for rex in routine.exercises %}
+        <div class="card routine-exercise-row{% if rex.superset_group %} in-superset{% endif %}" style="padding:0.75rem 1rem;" data-superset="{{ rex.superset_group or '' }}">
+            <input type="hidden" name="superset_group[]" value="{{ rex.superset_group or '' }}">
+            <div class="flex gap-1 items-center flex-wrap">
+                <select name="exercise_id[]" class="exercise-select" style="flex:2;">
+                    {% for ex in exercises %}
+                    <option value="{{ ex.id }}" {{ 'selected' if ex.id == rex.exercise_id }}>{{ ex.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="target_sets[]" value="{{ rex.target_sets }}" placeholder="Sets" style="width:70px;" min="1">
+                <span class="text-muted text-sm">x</span>
+                <input type="number" name="target_reps[]" value="{{ rex.target_reps }}" placeholder="Reps" style="width:70px;" min="1">
+                <span class="text-muted text-sm">@</span>
+                <input type="number" name="target_weight[]" value="{{ rex.target_weight or '' }}" placeholder="kg" step="0.5" style="width:80px;">
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="removeExerciseRow(this)">&#10005;</button>
+            </div>
+        </div>
+        {% if not loop.last %}
+        <div class="superset-toggle" onclick="toggleSuperset(this)">
+            <span class="superset-toggle-label">{% if rex.superset_group and loop.nextitem.superset_group == rex.superset_group %}Supersatz &#10003;{% else %}Supersatz{% endif %}</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-block mt-1" onclick="addRoutineExercise()">+ Übung hinzufügen</button>
+
+    <div class="form-actions mt-2">
+        <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">{{ 'Speichern' if routine else 'Erstellen' }}</button>
+    </div>
+</form>
+
+<script>
+const ALL_EXERCISES = {{ exercises | tojson }};
+let nextSupersetGroup = {{ (routine.exercises | map(attribute='superset_group') | select('integer') | list | max + 1) if routine and routine.exercises and routine.exercises | selectattr('superset_group') | list else 1 }};
+
+function addRoutineExercise() {
+    const container = document.getElementById('routine-exercises');
+    const options = ALL_EXERCISES.map(ex =>
+        `<option value="${ex.id}">${ex.name}</option>`
+    ).join('');
+
+    // Add superset toggle before the new row (if there are existing rows)
+    const existingRows = container.querySelectorAll('.routine-exercise-row');
+    if (existingRows.length > 0) {
+        const toggle = document.createElement('div');
+        toggle.className = 'superset-toggle';
+        toggle.onclick = function() { toggleSuperset(this); };
+        toggle.innerHTML = '<span class="superset-toggle-label">Supersatz</span>';
+        container.appendChild(toggle);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'card routine-exercise-row';
+    row.style.cssText = 'padding:0.75rem 1rem;';
+    row.dataset.superset = '';
+    row.innerHTML = `
+        <input type="hidden" name="superset_group[]" value="">
+        <div class="flex gap-1 items-center flex-wrap">
+            <select name="exercise_id[]" class="exercise-select" style="flex:2;">${options}</select>
+            <input type="number" name="target_sets[]" value="3" placeholder="Sets" style="width:70px;" min="1">
+            <span class="text-muted text-sm">x</span>
+            <input type="number" name="target_reps[]" value="10" placeholder="Reps" style="width:70px;" min="1">
+            <span class="text-muted text-sm">@</span>
+            <input type="number" name="target_weight[]" placeholder="kg" step="0.5" style="width:80px;">
+            <button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="removeExerciseRow(this)">&#10005;</button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+function removeExerciseRow(btn) {
+    const row = btn.closest('.routine-exercise-row');
+    const container = document.getElementById('routine-exercises');
+    const prev = row.previousElementSibling;
+    const next = row.nextElementSibling;
+
+    // Remove adjacent superset toggle
+    if (prev && prev.classList.contains('superset-toggle')) {
+        prev.remove();
+    } else if (next && next.classList.contains('superset-toggle')) {
+        next.remove();
+    }
+    row.remove();
+    recalcSupersets();
+}
+
+function toggleSuperset(toggleEl) {
+    const prevRow = toggleEl.previousElementSibling;
+    const nextRow = toggleEl.nextElementSibling;
+    if (!prevRow || !nextRow) return;
+
+    const prevGroup = prevRow.dataset.superset;
+    const nextGroup = nextRow.dataset.superset;
+    const label = toggleEl.querySelector('.superset-toggle-label');
+
+    if (prevGroup && prevGroup === nextGroup) {
+        // Already linked — unlink
+        prevRow.dataset.superset = '';
+        prevRow.querySelector('input[name="superset_group[]"]').value = '';
+        nextRow.dataset.superset = '';
+        nextRow.querySelector('input[name="superset_group[]"]').value = '';
+        label.textContent = 'Supersatz';
+        toggleEl.classList.remove('active');
+    } else {
+        // Link them with same group
+        const group = prevGroup || nextGroup || nextSupersetGroup++;
+        prevRow.dataset.superset = group;
+        prevRow.querySelector('input[name="superset_group[]"]').value = group;
+        nextRow.dataset.superset = group;
+        nextRow.querySelector('input[name="superset_group[]"]').value = group;
+        label.innerHTML = 'Supersatz &#10003;';
+        toggleEl.classList.add('active');
+    }
+    recalcSupersets();
+}
+
+function recalcSupersets() {
+    const rows = document.querySelectorAll('.routine-exercise-row');
+    rows.forEach(row => {
+        const sg = row.dataset.superset;
+        if (sg) {
+            row.classList.add('in-superset');
+        } else {
+            row.classList.remove('in-superset');
+        }
+    });
+
+    // Update toggle states
+    const toggles = document.querySelectorAll('.superset-toggle');
+    toggles.forEach(t => {
+        const prev = t.previousElementSibling;
+        const next = t.nextElementSibling;
+        if (prev && next && prev.dataset.superset && prev.dataset.superset === next.dataset.superset) {
+            t.classList.add('active');
+            t.querySelector('.superset-toggle-label').innerHTML = 'Supersatz &#10003;';
+        } else {
+            t.classList.remove('active');
+            t.querySelector('.superset-toggle-label').textContent = 'Supersatz';
+        }
+    });
+}
+</script>
+{% endblock %}

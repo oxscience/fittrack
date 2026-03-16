@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}E-Mail-Einstellungen{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>E-Mail-Einstellungen</h1>
+</div>
+
+<form method="POST" id="email-form" style="max-width:600px;">
+    <div class="card" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="margin-bottom:1rem;">SMTP (Versand)</h3>
+        <div class="form-row">
+            <div class="form-group" style="flex:2">
+                <label for="smtp_host">Host</label>
+                <input type="text" id="smtp_host" name="smtp_host" value="{{ config.get('smtp_host', '') }}" placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label for="smtp_port">Port</label>
+                <input type="number" id="smtp_port" name="smtp_port" value="{{ config.get('smtp_port', '587') }}" placeholder="587">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="smtp_encryption">Verschlüsselung</label>
+            <select id="smtp_encryption" name="smtp_encryption">
+                <option value="starttls" {{ 'selected' if config.get('smtp_encryption') == 'starttls' }}>STARTTLS</option>
+                <option value="ssl" {{ 'selected' if config.get('smtp_encryption') == 'ssl' }}>SSL/TLS</option>
+                <option value="none" {{ 'selected' if config.get('smtp_encryption') == 'none' }}>Keine</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="smtp_user">Benutzername</label>
+            <input type="text" id="smtp_user" name="smtp_user" value="{{ config.get('smtp_user', '') }}">
+        </div>
+        <div class="form-group">
+            <label for="smtp_password">Passwort</label>
+            <input type="password" id="smtp_password" name="smtp_password" value="{{ config.get('smtp_password', '') }}">
+        </div>
+    </div>
+
+    <div class="card" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="margin-bottom:1rem;">IMAP (Empfang)</h3>
+        <div class="form-row">
+            <div class="form-group" style="flex:2">
+                <label for="imap_host">Host</label>
+                <input type="text" id="imap_host" name="imap_host" value="{{ config.get('imap_host', '') }}" placeholder="imap.gmail.com">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label for="imap_port">Port</label>
+                <input type="number" id="imap_port" name="imap_port" value="{{ config.get('imap_port', '993') }}" placeholder="993">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="imap_encryption">Verschlüsselung</label>
+            <select id="imap_encryption" name="imap_encryption">
+                <option value="ssl" {{ 'selected' if config.get('imap_encryption') == 'ssl' }}>SSL/TLS</option>
+                <option value="starttls" {{ 'selected' if config.get('imap_encryption') == 'starttls' }}>STARTTLS</option>
+                <option value="none" {{ 'selected' if config.get('imap_encryption') == 'none' }}>Keine</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="imap_user">Benutzername</label>
+            <input type="text" id="imap_user" name="imap_user" value="{{ config.get('imap_user', '') }}">
+        </div>
+        <div class="form-group">
+            <label for="imap_password">Passwort</label>
+            <input type="password" id="imap_password" name="imap_password" value="{{ config.get('imap_password', '') }}">
+        </div>
+    </div>
+
+    <div class="card" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="margin-bottom:1rem;">Absender</h3>
+        <div class="form-group">
+            <label for="email_from_name">Name</label>
+            <input type="text" id="email_from_name" name="email_from_name" value="{{ config.get('email_from_name', '') }}" placeholder="FitTrack">
+        </div>
+        <div class="form-group">
+            <label for="email_from_address">Adresse</label>
+            <input type="email" id="email_from_address" name="email_from_address" value="{{ config.get('email_from_address', '') }}">
+        </div>
+    </div>
+
+    <div class="card" style="padding:1.5rem;margin-bottom:1rem;">
+        <h3 style="margin-bottom:1rem;">Automatische Erinnerungen</h3>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" name="reminders_enabled" value="1" {{ 'checked' if reminders_enabled == '1' }}
+                   style="width:auto;">
+            <span>Morgens Trainingspläne senden, abends nachhaken</span>
+        </label>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+        <button type="button" class="btn btn-ghost" style="flex:1;"
+            hx-post="{{ url_for('setup.test_email') }}"
+            hx-include="#email-form"
+            hx-target="#test-result">
+            &#9889; Verbindung testen
+        </button>
+        <button type="submit" class="btn btn-primary" style="flex:1;">Speichern</button>
+    </div>
+    <div id="test-result"></div>
+</form>
+{% endblock %}

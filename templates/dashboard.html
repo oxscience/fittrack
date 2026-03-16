@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Dashboard</h1>
+</div>
+
+<!-- Active Workout Banner -->
+{% if active_workout %}
+<div class="card" style="border-color: var(--color-primary); border-width: 2px;">
+    <div class="card-header">
+        <span class="card-title">Aktives Workout</span>
+        <span class="text-sm text-muted">Gestartet: {{ active_workout.started_at[:16] | replace('T', ' ') }}</span>
+    </div>
+    <p class="text-sm text-muted mb-1">{{ active_workout.sets | length }} Sets geloggt</p>
+    <a href="{{ url_for('workout.active_workout') }}" class="btn btn-primary">Fortsetzen</a>
+</div>
+{% else %}
+<!-- Start Workout -->
+<div class="card">
+    <h2 class="card-title mb-1">Workout starten</h2>
+    <div class="flex gap-1 flex-wrap">
+        <form method="POST" action="{{ url_for('workout.start_workout') }}">
+            <button type="submit" class="btn btn-primary btn-lg">Leeres Workout</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Workouts -->
+<div class="mt-3">
+    <div class="section-header">
+        <h2 class="section-title" style="font-size:1.1rem;">Letzte Workouts</h2>
+        <a href="{{ url_for('workout.history') }}" class="btn btn-ghost btn-sm">Alle anzeigen</a>
+    </div>
+    {% if recent_workouts %}
+        {% for w in recent_workouts %}
+        <a href="{{ url_for('workout.detail', workout_id=w.id) }}" class="workout-card">
+            <div class="workout-card-left">
+                <div class="workout-card-date">{{ w.started_at[:10] }}</div>
+                <div class="workout-card-meta">
+                    {{ w.exercise_count }} Übung{{ 'en' if w.exercise_count != 1 }}
+                    &middot;
+                    {% if w.duration_seconds %}
+                        {{ (w.duration_seconds / 60) | int }} Min
+                    {% endif %}
+                </div>
+            </div>
+            <div class="workout-card-right">
+                <div class="workout-card-volume">{{ "%.0f" | format(w.total_volume or 0) }} kg</div>
+                <div class="workout-card-volume-label">Volumen</div>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">&#127947;</div>
+            <p class="empty-state-text">Noch keine Workouts. Starte jetzt!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

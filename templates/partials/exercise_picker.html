@@ -1,0 +1,36 @@
+<div class="modal-header">
+    <h3>Übung hinzufügen</h3>
+    <button class="btn btn-ghost btn-icon" onclick="closeModal()">&#10005;</button>
+</div>
+<div class="modal-body">
+    <div class="modal-filters">
+        <input type="search" id="exercise-search" placeholder="Suchen..." oninput="filterExercises()">
+        <select id="exercise-filter-group" onchange="filterExercises()">
+            <option value="">Alle Muskelgruppen</option>
+            <option value="chest">Brust</option>
+            <option value="back">Rücken</option>
+            <option value="shoulders">Schultern</option>
+            <option value="arms">Arme</option>
+            <option value="legs">Beine</option>
+            <option value="core">Core</option>
+            <option value="cardio">Cardio</option>
+        </select>
+    </div>
+    <ul class="exercise-list" id="exercise-picker-list">
+        {% for ex in exercises %}
+        <li class="exercise-list-item" data-name="{{ ex.name | lower }}" data-muscle="{{ ex.muscle_group }}"
+            onclick="addExerciseToWorkout({{ workout_id }}, {{ ex.id }}, this)">
+            <span class="exercise-name">{{ ex.name }}</span>
+            <span class="exercise-meta">
+                <span class="badge badge-muscle">{{ ex.muscle_group }}</span>
+                <span class="badge badge-equipment">{{ ex.equipment }}</span>
+            </span>
+        </li>
+        {% endfor %}
+        {% if not exercises %}
+        <li class="empty-state" style="padding:2rem;">
+            <p class="empty-state-text">Keine Übungen gefunden.</p>
+        </li>
+        {% endif %}
+    </ul>
+</div>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Registrieren - FitTrack{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1 class="auth-title">Konto erstellen</h1>
+        <p class="auth-subtitle">
+            {% if invite_code %}
+                Einladung von deinem Trainer
+            {% else %}
+                Starte jetzt mit FitTrack
+            {% endif %}
+        </p>
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required autofocus placeholder="Dein Name">
+            </div>
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" required placeholder="name@beispiel.de">
+            </div>
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" name="password" required placeholder="Min. 6 Zeichen">
+            </div>
+            {% if invite_code %}
+                <input type="hidden" name="invite_code" value="{{ invite_code }}">
+                <input type="hidden" name="role" value="trainee">
+            {% else %}
+                <div class="form-group">
+                    <label for="role">Rolle</label>
+                    <select id="role" name="role">
+                        <option value="trainee">Trainee</option>
+                        <option value="trainer">Trainer / Therapeut</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="invite_code">Einladungscode (optional)</label>
+                    <input type="text" id="invite_code" name="invite_code" placeholder="z.B. A1B2C3D4">
+                </div>
+            {% endif %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Registrieren</button>
+            </div>
+        </form>
+        <p class="text-center mt-2 text-sm">
+            Bereits registriert? <a href="{{ url_for('auth.login') }}">Einloggen</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

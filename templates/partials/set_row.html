@@ -1,0 +1,24 @@
+<tr data-set-id="{{ s.id }}"
+    hx-put="{{ url_for('workout.update_set', set_id=s.id) }}"
+    hx-trigger="change from:find input"
+    hx-swap="none"
+    hx-include="closest tr">
+    <td class="set-number">{{ s.set_number }}</td>
+    <td class="previous-value">
+        {% if ex is defined and ex.last_performance and s.set_number <= ex.last_performance | length %}
+            {{ ex.last_performance[s.set_number - 1].weight or '-' }}kg x {{ ex.last_performance[s.set_number - 1].reps or '-' }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+    <td><input type="number" name="weight" value="{{ s.weight if s.weight is not none else '' }}" placeholder="0" step="0.5" inputmode="decimal"></td>
+    <td><input type="number" name="reps" value="{{ s.reps if s.reps is not none else '' }}" placeholder="0" step="1" inputmode="numeric"></td>
+    <td><input type="number" name="rpe" value="{{ s.rpe if s.rpe is not none else '' }}" placeholder="-" step="0.5" min="1" max="10" inputmode="decimal" style="width:50px;"></td>
+    <td>
+        <button class="btn btn-ghost btn-sm btn-icon"
+                hx-delete="{{ url_for('workout.remove_set', set_id=s.id) }}"
+                hx-target="closest tr"
+                hx-swap="outerHTML"
+                hx-confirm="Set löschen?">&#10005;</button>
+    </td>
+</tr>

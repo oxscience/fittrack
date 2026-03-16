@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Trainings - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Trainings</h1>
+    <a href="{{ url_for('routine.new') }}" class="btn btn-primary btn-sm">+ Neues Training</a>
+</div>
+
+{% if routines %}
+    {% for r in routines %}
+    <div class="card" style="padding:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:start; gap:0.75rem;">
+            <div style="flex:1;">
+                <a href="{{ url_for('routine.detail', routine_id=r.id) }}" style="font-weight:600;">{{ r.name }}</a>
+                {% if r.creator_name and r.created_by != current_user.id %}
+                <span class="text-sm text-muted">von {{ r.creator_name }}</span>
+                {% endif %}
+
+                {# Assignment badges #}
+                {% if r.assignees or (current_user.role == 'trainer' and r.created_by == current_user.id) %}
+                <div class="assignment-row">
+                    {% for a in r.assignees %}
+                    <span class="badge badge-assignee">
+                        {{ a.name }}
+                        {% if r.created_by == current_user.id %}
+                        <form method="POST" action="{{ url_for('routine.unassign', routine_id=r.id) }}" style="display:inline;">
+                            <input type="hidden" name="user_id" value="{{ a.id }}">
+                            <button type="submit" class="badge-remove" title="Zuweisung entfernen">&times;</button>
+                        </form>
+                        {% endif %}
+                    </span>
+                    {% endfor %}
+
+                    {# Assign dropdown - only for trainer who owns this routine #}
+                    {% if current_user.role == 'trainer' and r.created_by == current_user.id and trainees %}
+                    {% set assigned_ids = r.assignees | map(attribute='id') | list %}
+                    {% set available = trainees | rejectattr('id', 'in', assigned_ids) | list %}
+                    {% if available %}
+                    <form method="POST" action="{{ url_for('routine.assign', routine_id=r.id) }}" class="assign-form">
+                        <select name="user_id" onchange="if(this.value) this.form.submit()" class="assign-select">
+                            <option value="">+ Zuweisen</option>
+                            {% for t in available %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-1" style="flex-shrink:0;">
+                <form method="POST" action="{{ url_for('workout.start_workout') }}">
+                    <input type="hidden" name="routine_id" value="{{ r.id }}">
+                    <button type="submit" class="btn btn-success btn-sm">Starten</button>
+                </form>
+                {% if r.assignees and current_user.role == 'trainer' and r.created_by == current_user.id %}
+                <form method="POST" action="{{ url_for('routine.send_email', routine_id=r.id) }}">
+                    <button type="submit" class="btn btn-sm" title="Per E-Mail senden">&#9993; Senden</button>
+                </form>
+                {% endif %}
+                {% if r.created_by == current_user.id %}
+                <form method="POST" action="{{ url_for('routine.remove', routine_id=r.id) }}"
+                      onsubmit="return confirm('Training wirklich löschen?')">
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-danger);">&#10005;</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128221;</div>
+        <p class="empty-state-text">Noch keine Trainings erstellt.</p>
+    </div>
+{% endif %}
+{% endblock %}

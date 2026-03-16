@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Workout wiederholen - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Workout wiederholen</h1>
+    <a href="{{ url_for('workout.detail', workout_id=source.id) }}" class="btn btn-ghost btn-sm">&larr; Zurück</a>
+</div>
+
+<p class="text-sm text-muted mb-2">Passe optional Gewicht, Wiederholungen oder Sets pro Übung an. Leere Felder übernehmen die Originalwerte.</p>
+
+<form method="POST" action="{{ url_for('workout.duplicate_execute', workout_id=source.id) }}">
+    {% for eid, ex in exercises.items() %}
+    <div class="card" style="padding:1rem;margin-bottom:0.75rem;">
+        <div style="font-weight:600;margin-bottom:0.5rem;">
+            {{ ex.name }}
+            <span class="badge badge-muscle">{{ ex.muscle_group }}</span>
+        </div>
+        <div class="text-sm text-muted" style="margin-bottom:0.75rem;">
+            Original: {{ ex.num_sets }} Sets
+            {% if ex.sets[0].weight is not none %} &middot; {{ ex.sets[0].weight }} kg{% endif %}
+            {% if ex.sets[0].reps is not none %} &middot; {{ ex.sets[0].reps }} Reps{% endif %}
+        </div>
+        <div class="flex gap-1 items-center flex-wrap">
+            <div class="form-group" style="margin:0;">
+                <label class="text-sm" style="margin-bottom:0.2rem;">Gewicht (kg)</label>
+                <input type="number" name="weight_{{ eid }}" placeholder="{{ ex.sets[0].weight or '-' }}" step="0.5" style="width:100px;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label class="text-sm" style="margin-bottom:0.2rem;">Reps</label>
+                <input type="number" name="reps_{{ eid }}" placeholder="{{ ex.sets[0].reps or '-' }}" min="1" style="width:80px;">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label class="text-sm" style="margin-bottom:0.2rem;">Sets</label>
+                <input type="number" name="sets_{{ eid }}" placeholder="{{ ex.num_sets }}" min="1" max="10" style="width:70px;">
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="form-actions mt-2">
+        <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">Workout starten</button>
+    </div>
+</form>
+{% endblock %}

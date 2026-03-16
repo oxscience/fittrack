@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Workout Detail - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <div>
+        <h1 class="section-title">{{ workout.started_at[:10] }}</h1>
+        <p class="text-sm text-muted">
+            {% if workout.duration_seconds %}{{ (workout.duration_seconds / 60) | int }} Minuten{% endif %}
+            {% if workout.notes %}&middot; {{ workout.notes }}{% endif %}
+        </p>
+    </div>
+    <div class="flex gap-1">
+        <a href="{{ url_for('workout.duplicate', workout_id=workout.id) }}" class="btn btn-primary btn-sm">Wiederholen</a>
+        <a href="{{ url_for('workout.history') }}" class="btn btn-ghost btn-sm">&larr; Zurück</a>
+    </div>
+</div>
+
+{% for eid, ex in exercises.items() %}
+<div class="exercise-block">
+    <div class="exercise-block-header">
+        <div>
+            <span class="exercise-block-title">{{ ex.name }}</span>
+            <span class="badge badge-muscle">{{ ex.muscle_group }}</span>
+        </div>
+    </div>
+    <table class="set-table">
+        <thead>
+            <tr>
+                <th>Set</th>
+                <th>kg</th>
+                <th>Reps</th>
+                <th>RPE</th>
+                <th>Typ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in ex.sets %}
+            <tr>
+                <td class="set-number">{{ s.set_number }}</td>
+                <td>{{ s.weight if s.weight is not none else '-' }}</td>
+                <td>{{ s.reps if s.reps is not none else '-' }}</td>
+                <td>{{ s.rpe if s.rpe is not none else '-' }}</td>
+                <td class="text-sm text-muted">{{ s.set_type if s.set_type != 'normal' else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+
+<!-- Progress Charts -->
+<h2 class="section-title mt-3" style="font-size:1.1rem;">Fortschritt</h2>
+{% for eid, ex in exercises.items() %}
+<div class="chart-container">
+    <div class="chart-title">{{ ex.name }}</div>
+    <canvas id="chart-{{ eid }}" height="200"></canvas>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for eid, ex in exercises.items() %}
+    fetch('{{ url_for("workout.exercise_progress_api", exercise_id=eid) }}{% if workout.user_id != current_user.id %}&trainee_id={{ workout.user_id }}{% endif %}')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.length) return;
+            const ctx = document.getElementById('chart-{{ eid }}');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.slice(0, 10)),
+                    datasets: [{
+                        label: 'Max Gewicht (kg)',
+                        data: data.map(d => d.max_weight),
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79,70,229,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: true, grid: { display: false } },
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        });
+    {% endfor %}
+});
+</script>
+{% endblock %}

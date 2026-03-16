@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Trainer Dashboard - FitTrack{% endblock %}
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Meine Trainees</h1>
+    <form method="POST" action="{{ url_for('auth.create_invite_code') }}">
+        <button type="submit" class="btn btn-primary btn-sm">+ Einladung erstellen</button>
+    </form>
+</div>
+
+<!-- Review Queue -->
+{% if pending_reviews %}
+<a href="{{ url_for('trainer.review_queue') }}" class="card" style="border:2px solid var(--color-warning);padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;">
+    <span style="font-size:1.5rem;">&#9993;</span>
+    <div>
+        <div style="font-weight:600;">{{ pending_reviews|length }} E-Mail-Workout{{ 's' if pending_reviews|length != 1 }} zur Prüfung</div>
+        <div class="text-sm text-muted">Klicken zum Überprüfen</div>
+    </div>
+</a>
+{% endif %}
+
+<!-- Trainee Grid -->
+{% if trainees %}
+<div class="trainee-grid">
+    {% for t in trainees %}
+    <a href="{{ url_for('trainer.trainee_detail', trainee_id=t.id) }}" class="trainee-card">
+        <div class="flex items-center gap-1" style="margin-bottom:0.5rem;">
+            <span class="activity-dot {{ 'green' if t.stats.workouts_7d >= 3 else ('yellow' if t.stats.workouts_7d >= 1 else 'red') }}"></span>
+            <span class="trainee-name">{{ t.name }}</span>
+        </div>
+        <div class="trainee-email">{{ t.email }}</div>
+        <div class="trainee-stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ t.stats.workouts_7d }}</div>
+                <div class="stat-label">7 Tage</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ t.stats.workouts_30d }}</div>
+                <div class="stat-label">30 Tage</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ t.stats.streak }}</div>
+                <div class="stat-label">Streak</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">
+                    {% if t.stats.last_workout %}
+                        {{ t.stats.last_workout.started_at[:10] }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+                <div class="stat-label">Letztes WO</div>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">&#128101;</div>
+    <p class="empty-state-text">Noch keine Trainees. Erstelle eine Einladung!</p>
+</div>
+{% endif %}
+
+<!-- Invites -->
+{% if invites %}
+<div class="mt-3">
+    <h2 class="section-title" style="font-size:1.1rem;">Einladungen</h2>
+    {% for inv in invites %}
+    <div class="card" style="padding:0.75rem 1rem; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span class="invite-code">{{ inv.code }}</span>
+            <span class="text-sm text-muted ml-1">{{ inv.created_at[:10] }}</span>
+        </div>
+        <div>
+            {% if inv.used_by %}
+                <span class="badge badge-muscle">Verwendet von {{ inv.used_by_name }}</span>
+            {% else %}
+                <span class="text-sm text-muted">Offen</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
